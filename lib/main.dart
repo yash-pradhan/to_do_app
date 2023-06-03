@@ -7,7 +7,9 @@ void main() async {
   await Hive.initFlutter();
 
   //create db
-  final table = Hive.openBox("TasksTable");
+    final table = Hive.openBox("TasksTable");
+
+  
   runApp(const MyApp());
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -17,19 +19,18 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final _controller = TextEditingController();
-
-  final _table = Hive.box("TasksTable");
+  final table = Hive.openBox("TasksTable");
   DataBs db = DataBs();
+  final _table = Hive.box("TasksTable");
 
   @override
-  void initState(){
-    // TODO: implement initState
+  void initState() {
+    super.initState();
     if (_table.get("TODOLIST") == null) {
       db.createData();
     } else {
       db.getData();
     }
-    super.initState();
   }
 
   @override
@@ -105,7 +106,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-class TodoTile extends StatelessWidget {
+class TodoTile extends StatefulWidget {
   final bool isTaskCompleted;
   final String taskName;
   final Function(bool?)? onChanged;
@@ -120,13 +121,18 @@ class TodoTile extends StatelessWidget {
   });
 
   @override
+  State<TodoTile> createState() => _TodoTileState();
+}
+
+class _TodoTileState extends State<TodoTile> {
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(15, 10, 15, 0),
       child: Slidable(
         endActionPane: ActionPane(motion: const StretchMotion(), children: [
           SlidableAction(
-            onPressed: delete,
+            onPressed: widget.delete,
             backgroundColor: Vx.red400,
             icon: Icons.delete_outline_rounded,
             borderRadius: BorderRadius.circular(10),
@@ -145,17 +151,57 @@ class TodoTile extends StatelessWidget {
           child: Row(
             children: [
               Checkbox(
-                  value: isTaskCompleted,
-                  onChanged: onChanged,
+                  value: widget.isTaskCompleted,
+                  onChanged: widget.onChanged,
                   checkColor: Vx.black),
-              isTaskCompleted
-                  ? taskName.text.lineThrough.yellow500.xl2.make().centered()
-                  : taskName.text.white.xl2.make().centered(),
+              widget.isTaskCompleted
+                  ? widget.taskName.text.lineThrough.yellow500.xl2
+                      .make()
+                      .centered()
+                  : widget.taskName.text.white.xl2.make().centered(),
+              SizedBox(
+                height: 30,
+                width: 120,
+                child: ElevatedButton(
+                  onPressed: startTimer,
+                  style: ButtonStyle(
+                    shape: MaterialStateProperty.all(
+                      const StadiumBorder(),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Icon(Icons.timer_outlined),
+                      "$_start".text.make()
+                    ],
+                  ),
+                ).pOnly(left: 10),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  int _start = 20;
+
+  late Timer _timer;
+
+  void startTimer() {
+    const oneSec = Duration(seconds: 1);
+    _timer = Timer.periodic(oneSec, (timer) {
+      if (_start == 0) {
+        setState(() {
+          timer.cancel();
+        });
+      } else {
+        setState(() {
+          _start--;
+        });
+      }
+    });
   }
 }
 
